@@ -1,1 +1,176 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>課題締め切りカレンダー</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      background: #f4f6f8;
+      padding: 20px;
+    }
+
+    h1 {
+      text-align: center;
+    }
+
+    #form {
+      max-width: 700px;
+      margin: 20px auto;
+      display: flex;
+      gap: 10px;
+    }
+
+    input, button {
+      padding: 8px;
+      font-size: 14px;
+    }
+
+    /* 曜日＋日付を含めた7列 */
+    #calendar {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 5px;
+      max-width: 700px;
+      margin: 20px auto;
+    }
+
+    .weekday {
+      background: #e0e0e0;
+      text-align: center;
+      font-weight: bold;
+      padding: 5px 0;
+    }
+
+    .day {
+      background: #fff;
+      border: 1px solid #ddd;
+      min-height: 100px;
+      padding: 5px;
+      font-size: 14px;
+    }
+
+    .day strong {
+      display: block;
+      margin-bottom: 5px;
+    }
+
+    .task {
+      background: #ffdddd;
+      padding: 3px;
+      margin-top: 3px;
+      font-size: 12px;
+      border-radius: 3px;
+      cursor: pointer;
+    }
+
+    .task:hover {
+      background: #ffb3b3;
+    }
+  </style>
+</head>
+<body>
+
+<h1>課題締め切りカレンダー</h1>
+
+<div id="form">
+  <input type="date" id="date">
+  <input type="text" id="task" placeholder="課題名">
+  <button onclick="addTask()">追加</button>
+</div>
+
+<div id="calendar"></div>
+
+<script>
+  const calendar = document.getElementById("calendar");
+
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = today.getMonth(); // 0始まり
+
+  const tasks = JSON.parse(localStorage.getItem("tasks") || "{}");
+
+  const weekdays = ["日", "月", "火", "水", "木", "金", "土"];
+
+  function formatDate(y, m, d) {
+    return `${y}-${String(m).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+  }
+
+  function renderCalendar() {
+    calendar.innerHTML = "";
+
+    /* 曜日ヘッダーを表示 */
+    weekdays.forEach(day => {
+      const wd = document.createElement("div");
+      wd.className = "weekday";
+      wd.textContent = day;
+      calendar.appendChild(wd);
+    });
+
+    const firstDay = new Date(year, month, 1).getDay();
+    const lastDate = new Date(year, month + 1, 0).getDate();
+
+    /* 月初の空白 */
+    for (let i = 0; i < firstDay; i++) {
+      calendar.appendChild(document.createElement("div"));
+    }
+
+    /* 日付＋課題 */
+    for (let date = 1; date <= lastDate; date++) {
+      const dayDiv = document.createElement("div");
+      dayDiv.className = "day";
+
+      const dateKey = formatDate(year, month + 1, date);
+      dayDiv.innerHTML = `<strong>${date}</strong>`;
+
+      if (tasks[dateKey]) {
+        tasks[dateKey].forEach((taskName, index) => {
+          const taskDiv = document.createElement("div");
+          taskDiv.className = "task";
+          taskDiv.textContent = taskName;
+
+          taskDiv.onclick = () => {
+            if (confirm(`「${taskName}」を削除しますか？`)) {
+              tasks[dateKey].splice(index, 1);
+              if (tasks[dateKey].length === 0) {
+                delete tasks[dateKey];
+              }
+              localStorage.setItem("tasks", JSON.stringify(tasks));
+              renderCalendar();
+            }
+          };
+
+          dayDiv.appendChild(taskDiv);
+        });
+      }
+
+      calendar.appendChild(dayDiv);
+    }
+  }
+
+  function addTask() {
+    const date = document.getElementById("date").value;
+    const task = document.getElementById("task").value;
+
+    if (!date || !task) {
+      alert("日付と課題名を入力してください");
+      return;
+    }
+
+    if (!tasks[date]) {
+      tasks[date] = [];
+    }
+
+    tasks[date].push(task);
+    localStorage.setItem("tasks", JSON.stringify(tasks));
+
+    document.getElementById("task").value = "";
+    renderCalendar();
+  }
+
+  renderCalendar();
+</script>
+
+</body>
+</html>
 
